@@ -1,0 +1,13 @@
+.env
+node_modules/
+__pycache__/
+*.pyc
+dist/
+build/
+.venv/
+*.log
+.agents/
+AUDITORIA_PLAN_DESARROLLO.md
+DEV_JOURNAL_ADR_template.md
+PLAN_FRONTEND.md
+PLAN_MODULOS_NUEVOS.md
