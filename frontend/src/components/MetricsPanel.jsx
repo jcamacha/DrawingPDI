@@ -10,6 +10,7 @@ const SPECIFIC_COLORS = [
   { key: 'green_pct', label: 'Verde', color: '#22c55e' },
   { key: 'blue_pct', label: 'Azul', color: '#3b82f6' },
   { key: 'violet_pct', label: 'Violeta', color: '#8b5cf6' },
+  { key: 'earth_pct', label: 'Tonos Tierra', color: '#a0522d' },
   { key: 'white_pct', label: 'Blanco', color: '#d1d5db' },
   { key: 'black_pct', label: 'Negro', color: '#374151' },
   { key: 'gray_pct', label: 'Gris', color: '#9ca3af' },

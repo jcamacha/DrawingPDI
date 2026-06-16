@@ -30,7 +30,8 @@ El sistema ha sido diseñado para integrarse fluidamente en la práctica clínic
 - **Métricas de Trazo y Color:** Densidad de bordes, continuidad, proporción HSV.
 - **Análisis Emocional (VAD):** Dimensiones computacionales de Valencia (Positividad), Activación (Energía) y Dominancia (Control).
 - **Prueba Semiótica de Koch:** Distribución de masa cromática espacial para inferir cuadrantes psicológicos (Pasado, Futuro, Material, Ideal).
-- **Reportes Didácticos:** Generación de un PDF clínico con gráficas ReportLab (barras VAD, pastel terapéutico, mapa de Koch) e interpretaciones en lenguaje natural.
+- **AI Context Builder (Nuevo):** Pipeline avanzado que detecta regiones de color y construye un contexto estructurado con métricas locales, relaciones de proximidad e interpretaciones heurísticas empíricas. Diseñado para alimentar a un agente de IA encargado de redactar reportes.
+- **Reportes Didácticos Cuantitativos:** Generación de un PDF clínico estructurado en 7 secciones narrativas y éticamente limitadas (incluyendo Resumen Ejecutivo, Perfil Emocional VAD, Fenotipado Espacial y Anexo Técnico), asegurando un enfoque descriptivo y no diagnóstico apoyado por gráficos ReportLab.
 
 ## Requisitos
 
@@ -91,7 +92,8 @@ backend/
 │       ├── filters.py       # Gaussiano + Bilateral + base64 utils
 │       ├── edges.py         # Canny + métricas de trazo (fragmentación, densidad)
 │       ├── segmentation.py  # HSV + grupos terapéuticos + masa cromática
-│       └── semiotic_config.py # Clasificador Koch espacial
+│       ├── semiotic_config.py # Clasificador Koch espacial
+│       └── ai_context_builder.py # Constructor de contexto para el agente IA
 ├── tests/
 │   ├── unit/                # Tests unitarios (core, charts)
 │   └── integration/         # Tests E2E de endpoints y PDFs

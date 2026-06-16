@@ -34,13 +34,14 @@ COLOR_EMPIRICAL_HINTS = {
     "green": "green: balanced valence-arousal, restorative association (computational heuristic; Cha & Jung 2018)",
     "blue": "blue: low arousal, calm, introspective tendency (computational heuristic; Cha & Jung 2018)",
     "violet": "violet: moderate arousal, imaginative association (computational heuristic; limited cross-cultural data)",
+    "earth": "earth: grounding, corporeal connection, low-to-moderate arousal (computational heuristic; limited cross-cultural data)",
     "white": "white: achromatic, absence of pigment, potential avoidance or available space (computational heuristic)",
     "black": "black: achromatic, high contrast, density marker (computational heuristic)",
     "gray": "gray: achromatic, neutral, low chromatic engagement (computational heuristic)",
 }
 
 CHROMATIC_PROFILE_MAP = {
-    "red_low": "warm", "red_high": "warm", "orange": "warm", "yellow": "warm",
+    "red_low": "warm", "red_high": "warm", "orange": "warm", "yellow": "warm", "earth": "warm",
     "green": "cool", "blue": "cool", "violet": "cool",
     "white": "neutral", "black": "neutral", "gray": "neutral",
 }

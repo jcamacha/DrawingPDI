@@ -474,7 +474,7 @@ def _seccion6_distribucion_cromatica(elements, styles, color_dist):
     elements.append(Paragraph("Grupos Terapéuticos", styles["Heading3"]))
     group_data = [
         ["Grupo", "Porcentaje"],
-        ["Cálidos (Rojo+Naranja+Amarillo)", f"{groups.warm_pct:.2%}"],
+        ["Cálidos (Rojo+Naranja+Amarillo+Tierra)", f"{groups.warm_pct:.2%}"],
         ["Fríos (Verde+Azul+Violeta)", f"{groups.cool_pct:.2%}"],
         ["Neutros (Blanco+Negro+Gris)", f"{groups.neutral_pct:.2%}"],
         ["Otro", f"{groups.other_pct:.2%}"],
@@ -494,6 +494,7 @@ def _seccion6_distribucion_cromatica(elements, styles, color_dist):
         ["Verde", f"{specific.green_pct:.2%}"],
         ["Azul", f"{specific.blue_pct:.2%}"],
         ["Violeta", f"{specific.violet_pct:.2%}"],
+        ["Tonos Tierra", f"{specific.earth_pct:.2%}"],
         ["Blanco", f"{specific.white_pct:.2%}"],
         ["Negro", f"{specific.black_pct:.2%}"],
         ["Gris", f"{specific.gray_pct:.2%}"],

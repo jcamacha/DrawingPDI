@@ -9,6 +9,7 @@ class SpecificColors(BaseModel):
     green_pct: float = 0.0
     blue_pct: float = 0.0
     violet_pct: float = 0.0
+    earth_pct: float = 0.0
     white_pct: float = 0.0
     black_pct: float = 0.0
     gray_pct: float = 0.0
