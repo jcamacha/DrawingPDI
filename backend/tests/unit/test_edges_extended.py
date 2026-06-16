@@ -1,5 +1,5 @@
 from app.core.pdi.edges import apply_canny_edge_detection, compute_stroke_metrics
-from app.core.pdi.semiotic_config import classify_semiotic_zone, SEMIOTIC_ZONES
+from app.core.pdi.spatial_analysis import classify_spatial_zone, SPATIAL_QUADRANTS
 import numpy as np
 import cv2
 
@@ -83,31 +83,31 @@ def test_existing_five_tests_still_pass():
     assert m["edge_density_pct"] > 0
 
 
-def test_semiotic_zone_past():
-    assert classify_semiotic_zone(0.1, 0.1) == "PASADO"
+def test_spatial_zone_past():
+    assert classify_spatial_zone(0.1, 0.1) == "PASADO"
 
 
-def test_semiotic_zone_future():
-    assert classify_semiotic_zone(0.9, 0.1) == "FUTURO"
+def test_spatial_zone_future():
+    assert classify_spatial_zone(0.9, 0.1) == "FUTURO"
 
 
-def test_semiotic_zone_material():
-    assert classify_semiotic_zone(0.1, 0.9) == "MATERIAL"
+def test_spatial_zone_material():
+    assert classify_spatial_zone(0.1, 0.9) == "MATERIAL"
 
 
-def test_semiotic_zone_ideal():
-    assert classify_semiotic_zone(0.9, 0.9) == "IDEAL"
+def test_spatial_zone_ideal():
+    assert classify_spatial_zone(0.9, 0.9) == "IDEAL"
 
 
-def test_semiotic_zones_dict_has_four_entries():
-    assert len(SEMIOTIC_ZONES) == 4
-    assert "PASADO" in SEMIOTIC_ZONES
-    assert "FUTURO" in SEMIOTIC_ZONES
-    assert "MATERIAL" in SEMIOTIC_ZONES
-    assert "IDEAL" in SEMIOTIC_ZONES
+def test_spatial_quadrants_dict_has_four_entries():
+    assert len(SPATIAL_QUADRANTS) == 4
+    assert "PASADO" in SPATIAL_QUADRANTS
+    assert "FUTURO" in SPATIAL_QUADRANTS
+    assert "MATERIAL" in SPATIAL_QUADRANTS
+    assert "IDEAL" in SPATIAL_QUADRANTS
 
 
-def test_semiotic_zone_boundaries():
-    assert classify_semiotic_zone(0.5, 0.1) == "FUTURO"
-    assert classify_semiotic_zone(0.1, 0.5) == "MATERIAL"
-    assert classify_semiotic_zone(0.5, 0.5) == "IDEAL"
+def test_spatial_zone_boundaries():
+    assert classify_spatial_zone(0.5, 0.1) == "FUTURO"
+    assert classify_spatial_zone(0.1, 0.5) == "MATERIAL"
+    assert classify_spatial_zone(0.5, 0.5) == "IDEAL"

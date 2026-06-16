@@ -265,3 +265,93 @@ def compute_chromatic_mass(image: np.ndarray) -> dict:
         "centroid": centroid,
         "quadrant_distribution": quadrant_distribution,
     }
+
+
+def compute_canvas_utilization(image: np.ndarray) -> dict:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, non_white = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+    total_pixels = image.shape[0] * image.shape[1]
+    used_pixels = float(cv2.countNonZero(non_white))
+    used_pct = round(used_pixels / max(total_pixels, 1), 4)
+
+    if used_pct < 0.15:
+        expansion_flag = "micropsia"
+    elif used_pct > 0.90:
+        expansion_flag = "expansion"
+    else:
+        expansion_flag = "normal"
+
+    h, w = image.shape[:2]
+    left_half = non_white[:, : w // 2]
+    right_half = non_white[:, w // 2 :]
+    left_mass = float(cv2.countNonZero(left_half))
+    right_mass = float(cv2.countNonZero(right_half))
+    total_mass = max(left_mass + right_mass, 1.0)
+    symmetry_index = round(1.0 - abs(left_mass - right_mass) / total_mass, 4)
+
+    return {
+        "total_used_pct": used_pct,
+        "expansion_flag": expansion_flag,
+        "symmetry_index": symmetry_index,
+    }
+
+
+def compute_lr_symmetry(image: np.ndarray) -> float:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, bin_img = cv2.threshold(gray, 240, 255, cv2.THRESH_BINARY_INV)
+    h, w = bin_img.shape[:2]
+    left_half = bin_img[:, : w // 2]
+    right_half = bin_img[:, w // 2 :]
+    left_mass = float(cv2.countNonZero(left_half))
+    right_mass = float(cv2.countNonZero(right_half))
+    total_mass = max(left_mass + right_mass, 1.0)
+    return round(1.0 - abs(left_mass - right_mass) / total_mass, 4)
+
+
+def compute_visual_entropy(image: np.ndarray) -> float:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).flatten()
+    hist = hist / hist.sum()
+    hist = hist[hist > 0]
+    entropy = -float(np.sum(hist * np.log2(hist)))
+    return round(entropy, 4)
+
+
+def compute_fractal_dimension(image: np.ndarray) -> float:
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150)
+    sizes = [2, 4, 8, 16, 32, 64, 128]
+    counts = []
+    for size in sizes:
+        h_boxes = edges.shape[0] // size
+        w_boxes = edges.shape[1] // size
+        count = 0
+        for i in range(h_boxes):
+            for j in range(w_boxes):
+                if np.any(edges[i * size:(i + 1) * size, j * size:(j + 1) * size]):
+                    count += 1
+        counts.append(count)
+    if any(c == 0 for c in counts):
+        return 0.0
+    log_sizes = np.log(1.0 / np.array(sizes, dtype=float))
+    log_counts = np.log(np.array(counts, dtype=float))
+    coeffs = np.polyfit(log_sizes, log_counts, 1)
+    return round(float(coeffs[0]), 4)
+
+
+def compute_visual_complexity(image: np.ndarray) -> dict:
+    entropy = compute_visual_entropy(image)
+    fractal_dim = compute_fractal_dimension(image)
+
+    if entropy < 3.0:
+        organization_level = "low"
+    elif entropy < 5.5:
+        organization_level = "moderate"
+    else:
+        organization_level = "high"
+
+    return {
+        "fractal_dimension": fractal_dim,
+        "image_entropy": entropy,
+        "organization_level": organization_level,
+    }

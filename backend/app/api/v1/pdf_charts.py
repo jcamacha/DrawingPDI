@@ -164,16 +164,16 @@ def build_therapeutic_pie(groups: TherapeuticGroups) -> Drawing:
 # ─────────────────────────────────────────────────────────────────────────────
 # FUNCIÓN 3 — Diagrama de cuadrantes de Koch
 # ─────────────────────────────────────────────────────────────────────────────
-def build_koch_diagram(centroid_x: float, centroid_y: float, zone: str) -> Drawing:
+def build_quadrant_diagram(centroid_x: float, centroid_y: float, zone: str) -> Drawing:
     """
-    Dibuja el diagrama de cuadrantes de Koch usando solo primitivas de ReportLab.
+    Dibuja el diagrama de cuadrantes espaciales usando solo primitivas de ReportLab.
     El rectángulo de la zona activa tiene borde más grueso y fondo más saturado.
     El centroide se marca con un círculo rojo, clampeado al canvas [10, 190].
 
     Args:
         centroid_x: Coordenada X normalizada [0, 1] del centroide cromático.
         centroid_y: Coordenada Y normalizada [0, 1] del centroide cromático.
-        zone: Zona de Koch detectada ('PASADO', 'FUTURO', 'MATERIAL', 'IDEAL').
+        zone: Zona espacial detectada ('PASADO', 'FUTURO', 'MATERIAL', 'IDEAL').
 
     Returns:
         Drawing de 200×200 px con el diagrama de cuadrantes.

@@ -27,14 +27,14 @@ async def test_enriched_features_returned():
         assert "enriched_features" in data
         ef = data["enriched_features"]
         assert "computational_vad" in ef
-        assert "semiotic_mass" in ef
+        assert "spatial_phenotype" in ef
 
         vad = ef["computational_vad"]
         assert 0.0 <= vad["valence_estimate"] <= 1.0
         assert 0.0 <= vad["arousal_estimate"] <= 1.0
         assert 0.0 <= vad["dominance_estimate"] <= 1.0
 
-        sm = ef["semiotic_mass"]
+        sm = ef["spatial_phenotype"]
         assert "dominant_group" in sm
         assert sm["dominant_group"] in ("warm", "cool", "neutral")
         assert "predominant_color_centroid" in sm
@@ -83,7 +83,7 @@ async def test_detected_symbols_empty_list():
 
 
 @pytest.mark.asyncio
-async def test_semiotic_mass_quadrant_sums_approx_one():
+async def test_spatial_phenotype_quadrant_sums_approx_one():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         with open(TEST_IMAGE, "rb") as f:
@@ -96,6 +96,6 @@ async def test_semiotic_mass_quadrant_sums_approx_one():
         r = await client.post(f"/api/v1/images/{analysis_id}/analyze")
         data = r.json()["data"]
 
-        qmd = data["enriched_features"]["semiotic_mass"]["quadrant_mass_distribution"]
+        qmd = data["enriched_features"]["spatial_phenotype"]["quadrant_mass_distribution"]
         total = qmd["top_left_pct"] + qmd["top_right_pct"] + qmd["bottom_left_pct"] + qmd["bottom_right_pct"]
         assert abs(total - 1.0) < 0.02

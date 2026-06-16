@@ -67,4 +67,6 @@ def compute_stroke_metrics(canny_image: np.ndarray) -> dict:
         "stroke_continuity": round(stroke_continuity, 2),
         "fragmentation_ratio": fragmentation_ratio,
         "spatial_distribution": spatial_distribution,
+        "edge_thickness_px": round(mean_edge_intensity, 2),
+        "graphomotor_stability": round(1.0 - fragmentation_ratio, 4),
     }

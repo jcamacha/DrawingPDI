@@ -1,8 +1,32 @@
-# PDI Arteterapia
+# PDI Arteterapia: Sistema Avanzado para el Apoyo en el Diagnóstico Psicológico
 
-Sistema Avanzado de Procesamiento Digital de Imágenes aplicado a Arteterapia. Extrae métricas cuantitativas y cualitativas de producciones artísticas para apoyar la evaluación clínica.
+## Introducción
 
-**Nuevas características:**
+Bienvenido a **PDI Arteterapia**, una herramienta tecnológica orientada a potenciar y apoyar la labor de psicólogos y terapeutas durante el proceso de diagnóstico y seguimiento clínico en terapia.
+
+A través de técnicas avanzadas de Procesamiento Digital de Imágenes (PDI), este sistema analiza producciones artísticas realizadas por los pacientes, proveyendo al profesional de la salud mental de métricas cuantitativas y cualitativas de forma rápida, estructurada y automatizada.
+
+## Objetivo del Proyecto
+
+El objetivo principal de este sistema es ofrecer un instrumento de evaluación complementario para los terapeutas. Al extraer características visuales clave del dibujo, el sistema mapea estos elementos a diversas métricas emocionales y psicológicas. Esto facilita significativamente la interpretación clínica, ayudando a enfocar el tratamiento y a comprender de manera más profunda e integral el estado interno y emocional del paciente.
+
+## Flujo de Trabajo del Sistema
+
+El sistema ha sido diseñado para integrarse fluidamente en la práctica clínica, siguiendo un flujo de trabajo intuitivo y efectivo:
+
+1. **Expresión Libre (La Prueba):** Se le solicita al paciente que realice un dibujo libre. Se recomienda y fomenta fuertemente el uso de **colores pastel**, ya que es un material sumamente didáctico y moldeable que facilita la conexión emocional y permite una mejor expresión por parte de los pacientes.
+2. **Captura Fotográfica:** Una vez que el paciente finaliza el dibujo, el terapeuta toma una fotografía de la obra generada utilizando cualquier dispositivo con cámara.
+3. **Carga al Sistema:** El terapeuta ingresa a la plataforma web de PDI Arteterapia y sube la imagen del dibujo.
+4. **Procesamiento Digital de Imágenes (PDI):** El pipeline de procesamiento del sistema entra en acción de manera automática:
+   - **Análisis de Color:** Extrae los colores que presentan un mayor porcentaje de área en el dibujo y los mapea a diferentes métricas emocionales.
+   - **Análisis de Trazo:** Mediante el uso de un detector de bordes, el sistema evalúa la calidad del trazo y la intencionalidad con la que el paciente plasmó el dibujo sobre el papel.
+5. **Detección de Objetos y Análisis Semiótico (Futura Implementación):** Se tiene contemplado incluir un detector de objetos asistido por un agente de Inteligencia Artificial. Este agente se encargará de visualizar el objeto dibujado e identificar su significado semiótico, interpretando los recursos simbólicos que el paciente haya empleado para expresar su idea o vivencia.
+6. **Generación de Reportes para Tratamiento:** Finalmente, el sistema genera de forma automática un **PDF Clínico y Didáctico** orientado al terapeuta. Este documento incluye diversas métricas y gráficas que sirven como apoyo sustancial para planificar y ajustar el tratamiento del paciente.
+
+---
+
+## Características Técnicas Actuales
+
 - **Métricas de Trazo y Color:** Densidad de bordes, continuidad, proporción HSV.
 - **Análisis Emocional (VAD):** Dimensiones computacionales de Valencia (Positividad), Activación (Energía) y Dominancia (Control).
 - **Prueba Semiótica de Koch:** Distribución de masa cromática espacial para inferir cuadrantes psicológicos (Pasado, Futuro, Material, Ideal).

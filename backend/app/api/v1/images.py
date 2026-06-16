@@ -18,10 +18,15 @@ from app.core.pdi.schemas import (
     ColorHistogram,
     ComputationalVAD,
     ChromaticCentroid,
-    SemioticMass,
+    SpatialPhenotype,
+    CanvasUtilization,
+    VisualComplexity,
+    GraphomotorProfile,
     EnrichedFeatures,
     ProcessedImages,
+    AIContext,
 )
+from app.core.pdi.ai_context_builder import build_ai_context
 
 router = APIRouter()
 
@@ -114,6 +119,13 @@ async def analyze_image(analysis_id: str):
         segmentation.generate_hsv_mask_visualization, img_array
     )
 
+    canvas_util_result = await asyncio.to_thread(
+        segmentation.compute_canvas_utilization, img_array
+    )
+    visual_complexity_result = await asyncio.to_thread(
+        segmentation.compute_visual_complexity, img_array
+    )
+
     elapsed = time.monotonic() - start_time
     if elapsed > 5.0:
         print(
@@ -140,11 +152,13 @@ async def analyze_image(analysis_id: str):
                     "bottom_left_pct": 0.0, "bottom_right_pct": 0.0,
                 })
             ),
+            edge_thickness_px=stroke_metrics.get("edge_thickness_px", 0.0),
+            graphomotor_stability=stroke_metrics.get("graphomotor_stability", 0.0),
         ),
         histogram=ColorHistogram(**histogram),
         enriched_features=EnrichedFeatures(
             computational_vad=ComputationalVAD(**vad_result),
-            semiotic_mass=SemioticMass(
+            spatial_phenotype=SpatialPhenotype(
                 dominant_group=chromatic_mass["dominant_group"],
                 predominant_color_centroid=ChromaticCentroid(
                     **chromatic_mass["centroid"]
@@ -152,6 +166,15 @@ async def analyze_image(analysis_id: str):
                 quadrant_mass_distribution=SpatialDistribution(
                     **chromatic_mass["quadrant_distribution"]
                 ),
+            ),
+            canvas_utilization=CanvasUtilization(**canvas_util_result),
+            visual_complexity=VisualComplexity(**visual_complexity_result),
+            graphomotor_profile=GraphomotorProfile(
+                edge_density_pct=stroke_metrics.get("edge_density_pct", 0.0),
+                fragmentation_ratio=stroke_metrics.get("fragmentation_ratio", 0.0),
+                stroke_continuity=stroke_metrics.get("stroke_continuity", 0.0),
+                edge_thickness_px=stroke_metrics.get("edge_thickness_px", 0.0),
+                graphomotor_stability=stroke_metrics.get("graphomotor_stability", 0.0),
             ),
         ),
         detected_symbols=[],
@@ -166,5 +189,41 @@ async def analyze_image(analysis_id: str):
 
     return {
         "data": result.model_dump(),
+        "meta": {"elapsed_seconds": round(elapsed, 2)},
+    }
+
+
+@router.post("/images/{analysis_id}/ai-context")
+async def generate_ai_context(analysis_id: str):
+    s = session.get_session(analysis_id)
+    if s is None:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": True, "code": "SESSION_NOT_FOUND"},
+        )
+
+    if not session.is_analyzed(analysis_id):
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "error": True,
+                "code": "ANALYSIS_INCOMPLETE",
+                "message": "El análisis debe ejecutarse antes de generar el contexto IA.",
+            },
+        )
+
+    img_bytes = base64.b64decode(s.images.original_b64)
+    img_array = cv2.imdecode(
+        np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR
+    )
+
+    canny_arr = await asyncio.to_thread(edges.apply_canny_edge_detection, img_array)
+
+    ai_ctx, elapsed = await asyncio.to_thread(
+        build_ai_context, img_array, canny_arr, s
+    )
+
+    return {
+        "data": ai_ctx.model_dump(),
         "meta": {"elapsed_seconds": round(elapsed, 2)},
     }

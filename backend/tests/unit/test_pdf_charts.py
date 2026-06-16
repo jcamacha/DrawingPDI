@@ -9,7 +9,7 @@ from reportlab.graphics.shapes import Drawing
 from app.api.v1.pdf_charts import (
     build_vad_bar_chart,
     build_therapeutic_pie,
-    build_koch_diagram,
+    build_quadrant_diagram,
     build_spatial_bar,
 )
 from app.core.pdi.schemas import ComputationalVAD, TherapeuticGroups, SpatialDistribution
@@ -36,15 +36,15 @@ def test_therapeutic_pie_all_zeros_no_exception():
     assert isinstance(result, Drawing)
 
 
-def test_koch_diagram_returns_drawing():
-    """Verifica que build_koch_diagram retorna un Drawing con valores típicos."""
-    result = build_koch_diagram(0.3, 0.7, "MATERIAL")
+def test_quadrant_diagram_returns_drawing():
+    """Verifica que build_quadrant_diagram retorna un Drawing con valores típicos."""
+    result = build_quadrant_diagram(0.3, 0.7, "MATERIAL")
     assert isinstance(result, Drawing)
 
 
-def test_koch_diagram_boundary_values():
+def test_quadrant_diagram_boundary_values():
     """Caso límite: centroide en (0.0, 0.0) — no debe salir del canvas."""
-    result = build_koch_diagram(0.0, 0.0, "PASADO")
+    result = build_quadrant_diagram(0.0, 0.0, "PASADO")
     assert isinstance(result, Drawing)
 
 

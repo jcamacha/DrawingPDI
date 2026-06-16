@@ -5,7 +5,7 @@ import ImageGrid from '../components/ImageGrid';
 import ColorHistogram from '../components/ColorHistogram';
 import MetricsPanel from '../components/MetricsPanel';
 import VADMeter from '../components/VADMeter';
-import SemioticMap from '../components/SemioticMap';
+import SpatialPhenotypeMap from '../components/SpatialPhenotypeMap';
 import { ArrowLeft, SpinnerGap } from '@phosphor-icons/react';
 
 const STATES = {
@@ -139,10 +139,15 @@ export default function AnalysisPage({ analysisId, onReset }) {
                 <MetricsPanel
                   colorDistribution={result.color_distribution}
                   strokeMetrics={result.stroke_metrics}
+                  enrichedFeatures={result.enriched_features}
                   analysisId={analysisId}
                 />
                 <VADMeter vad={result.enriched_features?.computational_vad} />
-                <SemioticMap semioticMass={result.enriched_features?.semiotic_mass} />
+                <SpatialPhenotypeMap
+                  spatialPhenotype={result.enriched_features?.spatial_phenotype}
+                  canvasUtilization={result.enriched_features?.canvas_utilization}
+                  visualComplexity={result.enriched_features?.visual_complexity}
+                />
               </div>
             </motion.div>
           )}

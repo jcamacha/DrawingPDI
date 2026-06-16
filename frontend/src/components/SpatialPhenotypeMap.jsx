@@ -14,12 +14,12 @@ const ZONE_COLORS = {
   IDEAL: '#ec4899',
 };
 
-export default function SemioticMap({ semioticMass }) {
-  if (!semioticMass) return null;
+export default function SpatialPhenotypeMap({ spatialPhenotype, canvasUtilization, visualComplexity }) {
+  if (!spatialPhenotype) return null;
 
-  const centroid = semioticMass.predominant_color_centroid || { x_norm: 0.5, y_norm: 0.5 };
-  const quadrantDist = semioticMass.quadrant_mass_distribution || {};
-  const dominantGroup = semioticMass.dominant_group || 'unknown';
+  const centroid = spatialPhenotype.predominant_color_centroid || { x_norm: 0.5, y_norm: 0.5 };
+  const quadrantDist = spatialPhenotype.quadrant_mass_distribution || {};
+  const dominantGroup = spatialPhenotype.dominant_group || 'unknown';
 
   const dominantLabels = {
     warm: 'Cálidos',
@@ -41,7 +41,7 @@ export default function SemioticMap({ semioticMass }) {
     >
       <div className="px-5 pt-5 pb-4">
         <h3 className="text-xs font-medium tracking-widest uppercase text-zinc-400 mb-4">
-          Mapa Semiótico (Koch)
+          Fenotipado Espacial
         </h3>
 
         <div className="flex flex-col items-center gap-3">
@@ -91,10 +91,44 @@ export default function SemioticMap({ semioticMass }) {
 
           <div className="flex items-center gap-2 text-xs text-zinc-500">
             <span className="inline-block w-2 h-2 rounded-full bg-indigo-500" />
-            <span>Zona: <strong className="text-zinc-700">{currentZone}</strong></span>
+            <span>Cuadrante: <strong className="text-zinc-700">{currentZone}</strong></span>
             <span className="text-zinc-300">|</span>
-            <span>Grupo: <strong className="text-zinc-700">{dominantLabels[dominantGroup]}</strong></span>
+            <span>Perfil: <strong className="text-zinc-700">{dominantLabels[dominantGroup]}</strong></span>
           </div>
+
+          {canvasUtilization && (
+            <div className="w-full grid grid-cols-2 gap-2 text-xs">
+              <div className="text-center p-2 rounded-lg bg-zinc-50">
+                <div className="font-mono font-medium text-zinc-700">
+                  {((canvasUtilization.total_used_pct ?? 0) * 100).toFixed(1)}%
+                </div>
+                <div className="text-zinc-400">Ocupación</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-zinc-50">
+                <div className="font-mono font-medium text-zinc-700">
+                  {((canvasUtilization.symmetry_index ?? 0) * 100).toFixed(0)}%
+                </div>
+                <div className="text-zinc-400">Simetría I-D</div>
+              </div>
+            </div>
+          )}
+
+          {visualComplexity && visualComplexity.image_entropy > 0 && (
+            <div className="w-full grid grid-cols-2 gap-2 text-xs">
+              <div className="text-center p-2 rounded-lg bg-zinc-50">
+                <div className="font-mono font-medium text-zinc-700">
+                  {(visualComplexity.image_entropy ?? 0).toFixed(2)}
+                </div>
+                <div className="text-zinc-400">Entropía</div>
+              </div>
+              <div className="text-center p-2 rounded-lg bg-zinc-50">
+                <div className="font-mono font-medium text-zinc-700">
+                  {(visualComplexity.fractal_dimension ?? 0).toFixed(2)}
+                </div>
+                <div className="text-zinc-400">Dim. Fractal</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

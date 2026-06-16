@@ -1,11 +1,11 @@
 """
 reports.py — PDI-25
-Endpoints de generación de reportes clínicos PDF y JSON para Arteterapia.
+Endpoints de generación de reportes cuantitativos PDF y JSON para Arteterapia.
 Refactorización completa con 7 secciones narrativas y gráficos ReportLab.
 
 Endpoints disponibles:
     GET /reports/{analysis_id}/json  — Datos de análisis en formato JSON
-    GET /reports/{analysis_id}/pdf   — Reporte clínico en PDF con gráficos
+    GET /reports/{analysis_id}/pdf   — Reporte cuantitativo en PDF con gráficos
 """
 
 import io
@@ -31,7 +31,7 @@ from app.core.pdi import session
 from app.api.v1.pdf_charts import (
     build_vad_bar_chart,
     build_therapeutic_pie,
-    build_koch_diagram,
+    build_quadrant_diagram,
     build_spatial_bar,
 )
 
@@ -58,58 +58,92 @@ class DrawingFlowable(Flowable):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Glosarios clínicos para interpretación narrativa
+# Glosarios descriptivos para el reporte cuantitativo
+# NOTA: Todo lenguaje es descriptivo, no concluyente ni diagnóstico.
+# La interpretación psicológica es responsabilidad exclusiva del terapeuta.
 # ─────────────────────────────────────────────────────────────────────────────
 GLOSARIO_VAD = {
     "valence_high": (
-        "El paciente presenta una tendencia hacia estados emocionales positivos o de bienestar. "
-        "Los colores predominantes se asocian a experiencias agradables."
+        "La composición cromática presenta predominancia de colores computacionalmente "
+        "asociados a valencia positiva (VAD > 0.6). Esto refleja la distribución de "
+        "tonos observada; la significación emocional debe ser evaluada por el terapeuta "
+        "en el contexto clínico específico. Nota: las asociaciones de color presentan "
+        "variabilidad cultural documentada (Cha & Jung 2018)."
     ),
     "valence_low": (
-        "Los colores predominantes se asocian con estados de mayor tensión emocional "
-        "o introversión afectiva."
+        "La composición cromática presenta predominancia de tonos computacionalmente "
+        "asociados a valencia baja o de tensión. Se recomienda evaluar si existen "
+        "focos de alto contraste o elementos atípicos antes de atribuir significación "
+        "clínica. Las asociaciones VAD son heurísticas computacionales, no instrumentos "
+        "psicométricos."
     ),
     "arousal_high": (
-        "La paleta cromática sugiere un estado de alta activación o energía emocional "
-        "durante la sesión."
+        "Los valores cromáticos indican alta saturación de tonos activadores (VAD Arousal "
+        "> 0.5). El clínico debe considerar si la activación es difusa o focalizada, "
+        "y contextualizarla con la observación directa del proceso creativo. Las asociaciones "
+        "color-arousal son heurísticas con variabilidad cultural (Cha & Jung 2018)."
     ),
     "arousal_low": (
-        "El uso cromático indica un estado de calma, ensimismamiento o baja energía expresiva."
+        "La composición cromática presenta baja saturación de tonos activadores (VAD Arousal "
+        "< 0.5). El terapeuta puede explorar si esto corresponde a contención, fatiga o "
+        "selección deliberada de tonos apagados, en el contexto de la sesión."
     ),
 }
 
-GLOSARIO_KOCH = {
+GLOSARIO_CUADRANTES = {
     "PASADO": (
-        "La concentración de masa en el cuadrante izquierdo puede vincularse con experiencias "
-        "pasadas, vínculos afectivos tempranos o pensamiento retrospectivo."
+        "La concentración de masa cromática en el cuadrante superior izquierdo "
+        "cuantifica la distribución espacial observada. Estudios de Lange-Küttner (2009) "
+        "documentan que la ubicación superior-izquierda correlaciona con contenido "
+        "retrospectivo en ciertas poblaciones; la significación clínica específica "
+        "debe evaluarse en contexto."
     ),
     "FUTURO": (
-        "La masa cromática se proyecta hacia el lado derecho, asociado con expectativas, "
-        "planificación o proyección al futuro."
+        "La concentración de masa cromática en el cuadrante superior derecho "
+        "cuantifica la distribución espacial observada. Lange-Küttner (2009) documenta "
+        "asociaciones con contenido prospectivo o aspiracional; esta correlación no "
+        "constituye un diagnóstico y debe validarse clínicamente."
     ),
     "MATERIAL": (
-        "La concentración en la zona inferior sugiere anclaje en lo concreto, lo corporal "
-        "y las necesidades básicas."
+        "La concentración de masa cromática en el cuadrante inferior izquierdo "
+        "cuantifica la distribución espacial observada. Lange-Küttner (2009) documenta "
+        "asociaciones con contenido concreto o corporal; la interpretación psicológica "
+        "es responsabilidad del terapeuta en el contexto de la sesión."
     ),
     "IDEAL": (
-        "La distribución en la zona superior se vincula con la espiritualidad, la imaginación "
-        "y los ideales."
+        "La concentración de masa cromática en el cuadrante inferior derecho "
+        "cuantifica la distribución espacial observada. Lange-Küttner (2009) documenta "
+        "asociaciones con contenido imaginativo o abstracto; esta correlación espacial "
+        "no constituye por sí misma un indicador diagnóstico."
     ),
 }
 
 GLOSARIO_TRAZO = {
     "frag_high": (
-        "El trazo muestra alta fragmentación: los gestos expresivos son cortos e interrumpidos, "
-        "lo que puede reflejar ansiedad motriz, duda o exploración cautelosa."
+        "Se observa alta fragmentación de trazo (ratio > 0.5): los gestos son cortos "
+        "e interrumpidos. Esto puede corresponder a diversos factores (exploración "
+        "cautelosa, estilo personal, ansiedad motriz, entre otros); el terapeuta debe "
+        "interpretar en el contexto clínico específico."
     ),
     "frag_mid": (
-        "La fragmentación moderada indica un balance entre impulso expresivo y control "
-        "consciente del gesto."
+        "Se documenta fragmentación moderada del trazo (0.3 < ratio < 0.5). Esta "
+        "observación cuantitativa describe la continuidad de los bordes detectados; "
+        "la significación clínica depende del contexto terapéutico."
     ),
     "frag_low": (
-        "El trazo es fluido y continuo, indicando expresión espontánea y confianza en el gesto."
+        "El trazo presenta baja fragmentación (ratio < 0.3), con gestos continuos. "
+        "Esta medición cuantitativa no constituye por sí misma un indicador diagnóstico; "
+        "la interpretación corresponde al terapeuta."
     ),
 }
+
+DISCLAIMER_GLOBAL = (
+    "<b>AVISO IMPORTANTE:</b> Este reporte presenta cuantificadores de características visuales "
+    "extraídos por algoritmos de procesamiento digital de imagen. No constituye un instrumento "
+    "diagnóstico ni psicométrico. Las asociaciones de color (VAD) son heurísticas computacionales "
+    "con variabilidad cultural documentada (Cha & Jung 2018). La interpretación psicológica es "
+    "responsabilidad exclusiva del terapeuta calificado en el contexto clínico específico."
+)
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -127,7 +161,19 @@ def _estilo_tabla_base():
         ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f7f7f7")]),
         ("TOPPADDING", (0, 0), (-1, -1), 4),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
     ])
+
+
+def _cell_paragraph(text, style_name="cell_text", font_size=9, text_color=colors.HexColor("#333333")):
+    """Convierte texto plano en un Paragraph con word-wrap para celdas de tabla."""
+    style = ParagraphStyle(
+        style_name,
+        fontSize=font_size,
+        leading=font_size + 3,
+        textColor=text_color,
+    )
+    return Paragraph(text, style)
 
 
 def _seccion1_encabezado(elements, styles, analysis_id, timestamp):
@@ -142,11 +188,27 @@ def _seccion1_encabezado(elements, styles, analysis_id, timestamp):
         spaceAfter=8,
     )
 
-    elements.append(Paragraph("Reporte Clínico de Arteterapia — Análisis PDI", styles["Title"]))
+    elements.append(Paragraph("Reporte Cuantitativo de Características Visuales — PDI", styles["Title"]))
     elements.append(Paragraph(
-        "Procesamiento Digital de Imágenes aplicado a la evaluación de la producción artística",
+        "Cuantificación de características visuales de la producción artística. "
+        "Para interpretación clínica, consultar al terapeuta responsable.",
         estilo_subtitulo,
     ))
+
+    # Disclaimer global
+    estilo_disclaimer = ParagraphStyle(
+        "disclaimer",
+        parent=styles["Normal"],
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor("#8b0000"),
+        backColor=colors.HexColor("#fff8f8"),
+        borderColor=colors.HexColor("#d4a0a0"),
+        borderWidth=0.5,
+        borderPadding=6,
+        spaceAfter=10,
+    )
+    elements.append(Paragraph(DISCLAIMER_GLOBAL, estilo_disclaimer))
 
     # Tabla de metadatos básicos
     meta_data = [
@@ -168,8 +230,9 @@ def _seccion1_encabezado(elements, styles, analysis_id, timestamp):
 
 def _seccion2_resumen_ejecutivo(elements, styles, s):
     """
-    SECCIÓN 2 — Resumen ejecutivo en lenguaje natural (sin números brutos).
+    SECCIÓN 2 — Resumen cuantitativo descriptivo (sin interpretación diagnóstica).
     Genera un párrafo narrativo basado en los estimados VAD y métricas de trazo.
+    Todo lenguaje es descriptivo, no concluyente.
     """
     estilo_resumen = ParagraphStyle(
         "resumen",
@@ -187,38 +250,35 @@ def _seccion2_resumen_ejecutivo(elements, styles, s):
     ef = s.enriched_features
     sm = s.stroke_metrics
 
-    # Determinar intensidad emocional según arousal
     if ef and ef.computational_vad.arousal_estimate > 0.6:
-        intensidad = "alta activación emocional"
+        intensidad = "alta presencia de tonos cromáticos activadores (VAD Arousal > 0.6)"
     elif ef and ef.computational_vad.arousal_estimate > 0.4:
-        intensidad = "activación emocional moderada"
+        intensidad = "presencia moderada de tonos activadores (VAD Arousal 0.4–0.6)"
     else:
-        intensidad = "baja activación emocional"
+        intensidad = "baja presencia de tonos cromáticos activadores (VAD Arousal < 0.4)"
 
-    # Determinar tono según valencia
     if ef and ef.computational_vad.valence_estimate > 0.6:
-        tono = "predominantemente positivo"
+        tono = "con predominancia de colores computacionalmente asociados a valencia positiva"
     elif ef and ef.computational_vad.valence_estimate > 0.4:
-        tono = "de tono neutro"
+        tono = "con distribución cromática de valencia intermedia"
     else:
-        tono = "de carga emocional intensa"
+        tono = "con predominancia cromática asociada a valencia baja o de tensión"
 
-    # Determinar calidad del trazo según fragmentación
     if sm and sm.fragmentation_ratio > 0.5:
-        trazo = "fragmentado e interrumpido"
+        trazo = "alta fragmentación (ratio > 0.5)"
     elif sm and sm.fragmentation_ratio > 0.3:
-        trazo = "moderadamente fragmentado"
+        trazo = "fragmentación moderada (0.3 < ratio < 0.5)"
     else:
-        trazo = "fluido y continuo"
+        trazo = "baja fragmentación (ratio < 0.3)"
 
-    # Grupo cromático dominante
-    grupo = ef.semiotic_mass.dominant_group if ef else "no determinado"
+    grupo = ef.spatial_phenotype.dominant_group if ef else "no determinado"
 
     resumen = (
-        f"La producción artística analizada presenta {intensidad} con un tono {tono}. "
-        f"El grupo cromático predominante es {grupo}, y el trazo es {trazo}. "
-        f"Se recomienda al terapeuta complementar este análisis cuantitativo con la "
-        f"observación clínica directa del proceso creativo."
+        f"Los valores VAD observados indican {intensidad}, {tono}. "
+        f"El perfil cromático predominante es {grupo}, y el trazo presenta {trazo}. "
+        f"Estos valores son cuantificadores computacionales de características visuales, "
+        f"no instrumentos diagnósticos. La interpretación psicológica es responsabilidad "
+        f"exclusiva del terapeuta calificado."
     )
 
     elements.append(Paragraph("Resumen Ejecutivo", styles["Heading2"]))
@@ -231,7 +291,7 @@ def _seccion3_perfil_emocional(elements, styles, ef):
     SECCIÓN 3 — Perfil Emocional (VAD) con gráfico de barras y texto clínico.
     Solo se agrega si ef (enriched_features) no es None.
     """
-    elements.append(Paragraph("Perfil Emocional — Dimensiones VAD", styles["Heading2"]))
+    elements.append(Paragraph("Dimensiones VAD — Valores Cuantitativos", styles["Heading2"]))
 
     # Gráfico de barras VAD
     chart_vad = build_vad_bar_chart(ef.computational_vad)
@@ -266,58 +326,90 @@ def _seccion3_perfil_emocional(elements, styles, ef):
     elements.append(Spacer(1, 0.5 * cm))
 
 
-def _seccion4_analisis_semiotico(elements, styles, ef):
+def _seccion4_fenotipado_espacial(elements, styles, ef):
     """
-    SECCIÓN 4 — Análisis Semiótico y Espacial (Test de Koch).
+    SECCIÓN 4 — Fenotipado Espacial y Utilization (cuadrantes empíricos).
     Solo se agrega si ef (enriched_features) no es None.
     """
-    from app.core.pdi.semiotic_config import classify_semiotic_zone
+    from app.core.pdi.spatial_analysis import classify_spatial_zone
 
-    elements.append(Paragraph("Análisis Semiótico y Espacial (Test de Koch)", styles["Heading2"]))
+    elements.append(Paragraph("Fenotipado Espacial y Utilization", styles["Heading2"]))
 
-    # Calcular zona y centroide
-    centroid = ef.semiotic_mass.predominant_color_centroid
-    zone = classify_semiotic_zone(centroid.x_norm, centroid.y_norm)
-    qd = ef.semiotic_mass.quadrant_mass_distribution
+    centroid = ef.spatial_phenotype.predominant_color_centroid
+    zone = classify_spatial_zone(centroid.x_norm, centroid.y_norm)
+    qd = ef.spatial_phenotype.quadrant_mass_distribution
 
-    # Diagrama de Koch
-    chart_koch = build_koch_diagram(centroid.x_norm, centroid.y_norm, zone)
-    elements.append(DrawingFlowable(chart_koch))
-    elements.append(Spacer(1, 0.3 * cm))
+    chart_quadrant = build_quadrant_diagram(centroid.x_norm, centroid.y_norm, zone)
+    elements.append(DrawingFlowable(chart_quadrant))
+    elements.append(Spacer(1, 0.15 * cm))
 
-    # Tabla de distribución de masa por cuadrantes con interpretación clínica
-    koch_data = [
-        ["Cuadrante", "Masa", "Interpretación Clínica"],
-        ["Superior Izq. (PASADO)", f"{qd.top_left_pct:.0%}", "Vínculo con experiencias pasadas"],
-        ["Superior Der. (FUTURO)", f"{qd.top_right_pct:.0%}", "Proyección y expectativas"],
-        ["Inferior Izq. (MATERIAL)", f"{qd.bottom_left_pct:.0%}", "Anclaje en lo concreto"],
-        ["Inferior Der. (IDEAL)", f"{qd.bottom_right_pct:.0%}", "Aspiraciones e idealización"],
+    estilo_nota_cuadrantes = ParagraphStyle(
+        "nota_cuadrantes",
+        parent=styles["Normal"],
+        fontSize=7,
+        leading=9,
+        textColor=colors.HexColor("#888888"),
+        italic=True,
+        spaceAfter=4,
+    )
+    elements.append(Paragraph(
+        "(Etiquetas basadas en el modelo espacial clásico, ver tabla de correlaciones empíricas)",
+        estilo_nota_cuadrantes,
+    ))
+    elements.append(Spacer(1, 0.15 * cm))
+
+    quadrant_data = [
+        ["Cuadrante", "Masa %", "Correlación documentada (no diagnóstica)"],
+        ["Sup. Izq. (PASADO)", f"{qd.top_left_pct:.0%}", _cell_paragraph("Contenido retrospectivo — correlación documentada (Lange-Küttner 2009)")],
+        ["Sup. Der. (FUTURO)", f"{qd.top_right_pct:.0%}", _cell_paragraph("Contenido prospectivo — correlación documentada (Lange-Küttner 2009)")],
+        ["Inf. Izq. (MATERIAL)", f"{qd.bottom_left_pct:.0%}", _cell_paragraph("Contenido concreto/corporal — correlación documentada (Lange-Küttner 2009)")],
+        ["Inf. Der. (IDEAL)", f"{qd.bottom_right_pct:.0%}", _cell_paragraph("Contenido imaginativo/abstracto — correlación documentada (Lange-Küttner 2009)")],
     ]
-    koch_table = Table(koch_data, colWidths=[5 * cm, 2.5 * cm, 8 * cm])
-    koch_table.setStyle(_estilo_tabla_base())
-    elements.append(koch_table)
+    quadrant_table = Table(quadrant_data, colWidths=[5 * cm, 2.5 * cm, 8 * cm])
+    quadrant_table.setStyle(_estilo_tabla_base())
+    elements.append(quadrant_table)
     elements.append(Spacer(1, 0.3 * cm))
 
-    # Texto clínico de la zona detectada
     estilo_clinico = ParagraphStyle(
-        "clinico_koch",
+        "clinico_quadrant",
         parent=styles["Normal"],
         fontSize=9,
         leading=14,
         textColor=colors.HexColor("#444444"),
     )
-    texto_zona = GLOSARIO_KOCH.get(zone, "Zona no reconocida en la clasificación semiótica.")
+    texto_zona = GLOSARIO_CUADRANTES.get(zone, "Zona no reconocida en la clasificación espacial.")
     elements.append(Paragraph(f"Zona detectada: <b>{zone}</b> — {texto_zona}", estilo_clinico))
+
+    if ef.canvas_utilization and ef.canvas_utilization.total_used_pct > 0:
+        util_pct = ef.canvas_utilization.total_used_pct
+        expansion = ef.canvas_utilization.expansion_flag
+        elements.append(Paragraph(
+            f"Ocupación del canvas: <b>{util_pct:.0%}</b> — Clasificación cuantitativa: <b>{expansion}</b>. "
+            f"Este valor mide la proporción de píxeles no blancos sobre el total; la significación clínica "
+            f"debe evaluarse en contexto.",
+            estilo_clinico,
+        ))
+    if ef.visual_complexity and ef.visual_complexity.image_entropy > 0:
+        elements.append(Paragraph(
+            f"Entropía visual: <b>{ef.visual_complexity.image_entropy:.2f}</b> — "
+            f"Nivel de organización: <b>{ef.visual_complexity.organization_level}</b>. "
+            f"La entropía de Shannon cuantifica la diversidad tonal; la dimensión fractal "
+            f"(<b>{ef.visual_complexity.fractal_dimension:.2f}</b>) cuantifica la complejidad estructural. "
+            f"Valores descriptivos, no diagnósticos.",
+            estilo_clinico,
+        ))
+
     elements.append(Spacer(1, 0.5 * cm))
 
 
 def _seccion5_trazo(elements, styles, sm):
     """
-    SECCIÓN 5 — Dinámica Sensoriomotora del Trazo con gráfico espacial y tabla.
+    SECCIÓN 5 — Características Grafomotoras del Trazo con gráfico espacial y tabla.
     Solo se agrega si sm (stroke_metrics) no es None.
+    Todo lenguaje es descriptivo, no concluyente.
     """
     elements.append(
-        Paragraph("Calidad del Trazo y Dinámica Sensoriomotora", styles["Heading2"])
+        Paragraph("Características Grafomotoras del Trazo", styles["Heading2"])
     )
 
     # Gráfico de distribución espacial
@@ -325,26 +417,23 @@ def _seccion5_trazo(elements, styles, sm):
     elements.append(DrawingFlowable(chart_spatial))
     elements.append(Spacer(1, 0.3 * cm))
 
-    # Determinar interpretación de densidad
     density_interp = (
-        "trazos enérgicos/densos" if sm.edge_density_pct > 0.15 else "trazos suaves/dispersos"
+        f"densidad de bordes elevada ({sm.edge_density_pct:.1%})" if sm.edge_density_pct > 0.15
+        else f"densidad de bordes baja ({sm.edge_density_pct:.1%})"
     )
 
-    # Determinar interpretación de intensidad
     if sm.mean_edge_intensity > 150:
-        intensity_interp = "Alta presión del trazo"
+        intensity_interp = f"intensidad de borde alta ({sm.mean_edge_intensity:.1f})"
     elif sm.mean_edge_intensity > 100:
-        intensity_interp = "Presión moderada"
+        intensity_interp = f"intensidad de borde moderada ({sm.mean_edge_intensity:.1f})"
     else:
-        intensity_interp = "Trazo ligero o sin presión"
+        intensity_interp = f"intensidad de borde baja ({sm.mean_edge_intensity:.1f})"
 
-    # Determinar interpretación de continuidad
-    continuity_interp = (
-        "Trazos amplios y fluidos" if sm.stroke_continuity > 50
-        else "Trazos cortos y exploratorios"
-    )
+    if sm.stroke_continuity > 50:
+        continuity_interp = f"longitud media de contorno elevada ({sm.stroke_continuity:.1f} px)"
+    else:
+        continuity_interp = f"longitud media de contorno corta ({sm.stroke_continuity:.1f} px)"
 
-    # Determinar texto de fragmentación
     if sm.fragmentation_ratio > 0.5:
         frag_texto = GLOSARIO_TRAZO["frag_high"]
     elif sm.fragmentation_ratio > 0.3:
@@ -353,11 +442,13 @@ def _seccion5_trazo(elements, styles, sm):
         frag_texto = GLOSARIO_TRAZO["frag_low"]
 
     stroke_data = [
-        ["Métrica", "Valor", "Significado Clínico"],
-        ["Densidad de bordes", f"{sm.edge_density_pct:.2%}", density_interp],
-        ["Intensidad media", f"{sm.mean_edge_intensity:.1f}", intensity_interp],
-        ["Continuidad", f"{sm.stroke_continuity:.1f} px", continuity_interp],
-        ["Fragmentación", f"{sm.fragmentation_ratio:.2f}", frag_texto],
+        ["Métrica", "Valor", "Observación Descriptiva"],
+        ["Densidad de bordes", f"{sm.edge_density_pct:.2%}", _cell_paragraph(density_interp)],
+        ["Intensidad media", f"{sm.mean_edge_intensity:.1f}", _cell_paragraph(intensity_interp)],
+        ["Continuidad", f"{sm.stroke_continuity:.1f} px", _cell_paragraph(continuity_interp)],
+        ["Fragmentación", f"{sm.fragmentation_ratio:.2f}", _cell_paragraph(frag_texto)],
+        ["Grosor del trazo", f"{sm.edge_thickness_px:.1f}", _cell_paragraph(f"Intensidad promedio de borde: {sm.edge_thickness_px:.1f}")],
+        ["Estabilidad grafomotora", f"{sm.graphomotor_stability:.2f}", _cell_paragraph(f"Proporción de contornos continuos (1 − fragmentación): {sm.graphomotor_stability:.2f}")],
     ]
     stroke_table = Table(stroke_data, colWidths=[4 * cm, 3 * cm, 8.5 * cm])
     stroke_table.setStyle(_estilo_tabla_base())
@@ -430,8 +521,11 @@ def _seccion7_anexo_tecnico(elements, styles, s):
         spaceAfter=8,
     )
     elements.append(Paragraph(
-        "Los datos de esta sección son para uso técnico y académico. "
-        "No se recomienda su interpretación clínica directa sin el contexto del sistema completo.",
+        "Los datos de esta sección son mediciones cuantitativas de características visuales "
+        "extraídas por algoritmos de procesamiento digital de imagen. Este sistema no constituye "
+        "un instrumento diagnóstico ni psicométrico. Las asociaciones de color (VAD) son heurísticas "
+        "computacionales con variabilidad cultural (Cha & Jung 2018). La interpretación psicológica "
+        "es responsabilidad exclusiva del terapeuta calificado.",
         estilo_nota,
     ))
 
@@ -488,8 +582,9 @@ def get_report_json(analysis_id: str):
 @router.get("/reports/{analysis_id}/pdf")
 def get_report_pdf(analysis_id: str):
     """
-    Genera y retorna el reporte clínico en PDF con 7 secciones narrativas.
-    Incluye gráficos ReportLab embebidos (VAD, Koch, torta, barras espaciales).
+    Genera y retorna el reporte cuantitativo en PDF con 7 secciones descriptivas.
+    Incluye gráficos ReportLab embebidos (VAD, cuadrantes espaciales, torta, barras espaciales).
+    Todo lenguaje es descriptivo, no diagnóstico. La interpretación clínica es responsabilidad del terapeuta.
     """
     s = session.get_session(analysis_id)
     if s is None:
@@ -525,9 +620,9 @@ def get_report_pdf(analysis_id: str):
     if s.enriched_features:
         _seccion3_perfil_emocional(elements, styles, s.enriched_features)
 
-    # ── Sección 4: Análisis semiótico Koch ───────────────────────────────────
+    # ── Sección 4: Fenotipado espacial ────────────────────────────────────────
     if s.enriched_features:
-        _seccion4_analisis_semiotico(elements, styles, s.enriched_features)
+        _seccion4_fenotipado_espacial(elements, styles, s.enriched_features)
 
     # ── Sección 5: Dinámica sensoriomotora del trazo ─────────────────────────
     if s.stroke_metrics:
